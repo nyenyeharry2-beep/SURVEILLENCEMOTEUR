@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>Surveillance du moteur</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f6f8;
+    color: #1f2937;
+}
+
+.container {
+    width: 95%;
+    max-width: 1300px;
+    margin: 25px auto;
+}
+
+header {
+    background: #111827;
+    color: white;
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    margin: 0 0 10px;
+}
+
+#connexion {
+    font-weight: bold;
+}
+
+.card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.status {
+    text-align: center;
+}
+
+.statusValue {
+    font-size: 30px;
+    font-weight: bold;
+    margin: 8px;
+}
+
+#etat {
+    color: #16a34a;
+}
+
+#moteur {
+    color: #2563eb;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns:
+        repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+}
+
+.grid .card {
+    margin-bottom: 0;
+}
+
+.card h2 {
+    margin-top: 0;
+}
+
+.card h3 {
+    margin-top: 0;
+    color: #374151;
+}
+
+.value {
+    font-size: 26px;
+    font-weight: bold;
+}
+
+.alarm {
+    text-align: center;
+    border: 3px solid transparent;
+}
+
+#alarme {
+    font-size: 28px;
+    font-weight: bold;
+}
+
+#probleme {
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+button {
+    border: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.start {
+    background: #16a34a;
+    color: white;
+}
+
+.stop {
+    background: #dc2626;
+    color: white;
+}
+
+.historyButton {
+    background: #2563eb;
+    color: white;
+    width: 100%;
+}
+
+button:hover {
+    opacity: 0.85;
+}
+
+.message {
+    text-align: center;
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+.history {
+    display: none;
+}
+
+.history.active {
+    display: block;
+}
+
+.tableContainer {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    min-width: 1100px;
+}
+
+th,
+td {
+    border: 1px solid #d1d5db;
+    padding: 10px;
+    text-align: center;
+}
+
+th {
+    background: #111827;
+    color: white;
+}
+
+canvas {
+    width: 100% !important;
+    max-height: 350px;
+}
+
+.footer {
+    text-align: center;
+    color: #6b7280;
+    margin-top: 30px;
+    padding: 20px;
+}
+
+@media (max-width: 600px) {
+
+    .container {
+        width: 92%;
+        margin: 15px auto;
+    }
+
+    .value {
+        font-size: 22px;
+    }
+
+    button {
+        width: 100%;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+
+<h1>
+SURVEILLANCE DU MOTEUR
+</h1>
+
+<div id="connexion">
+Connexion : EN ATTENTE
+</div>
+
+</header>
+
+<!-- ETAT -->
+
+<div class="card status">
+
+<h2>
+ÉTAT DU MOTEUR
+</h2>
+
+<div
+    id="etat"
+    class="statusValue"
+>
+ARRET
+</div>
+
+<div
+    id="moteur"
+    class="statusValue"
+>
+OFF
+</div>
+
+</div>
+
+<!-- ALARME -->
+
+<div class="card alarm">
+
+<h2>
+ALARME
+</h2>
+
+<div id="alarme">
+OFF
+</div>
+
+<div id="probleme">
+AUCUN
+</div>
+
+</div>
+
+<!-- DONNEES -->
+
+<div class="card">
+
+<h2>
+📊 DONNÉES MOTEUR
+</h2>
+
+<div class="grid">
+
+<div class="card">
+<h3>RPM</h3>
+<div id="rpm" class="value">
+0.00 tr/min
+</div>
+</div>
+
+<div class="card">
+<h3>AX</h3>
+<div id="ax" class="value">
+0.00 m/s²
+</div>
+</div>
+
+<div class="card">
+<h3>AY</h3>
+<div id="ay" class="value">
+0.00 m/s²
+</div>
+</div>
+
+<div class="card">
+<h3>AZ</h3>
+<div id="az" class="value">
+0.00 m/s²
+</div>
+</div>
+
+<div class="card">
+<h3>Accélération RMS</h3>
+<div id="arms" class="value">
+0.00 m/s²
+</div>
+</div>
+
+<div class="card">
+<h3>Vibration RMS</h3>
+<div id="vrms" class="value">
+0.00 mm/s
+</div>
+</div>
+
+<div class="card">
+<h3>Impulsions</h3>
+<div id="impulsions" class="value">
+0
+</div>
+</div>
+
+<div class="card">
+<h3>Écart RPM</h3>
+<div id="ecart" class="value">
+0.00 %
+</div>
+</div>
+
+<div class="card">
+<h3>Heure</h3>
+<div id="heure" class="value">
+00:00:00
+</div>
+</div>
+
+</div>
+
+</div>
+
+<!-- COMMANDES -->
+
+<div class="card">
+
+<h2>
+COMMANDE DU MOTEUR
+</h2>
+
+<div class="buttons">
+
+<button
+    class="start"
+    onclick="envoyerCommande('START')"
+>
+▶ DÉMARRER
+</button>
+
+<button
+    class="stop"
+    onclick="envoyerCommande('STOP')"
+>
+■ ARRÊTER
+</button>
+
+</div>
+
+<div id="message" class="message"></div>
+
+</div>
+
+<!-- HISTORIQUE -->
+
+<div class="card">
+
+<button
+    class="historyButton"
+    onclick="afficherHistorique()"
+>
+📊 HISTORIQUE
+</button>
+
+</div>
+
+<div
+    id="historiqueSection"
+    class="card history"
+>
+
+<h2>
+📊 HISTORIQUE
+</h2>
+
+<div class="tableContainer">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Heure</th>
+<th>RPM</th>
+<th>AX</th>
+<th>AY</th>
+<th>AZ</th>
+<th>ARMS</th>
+<th>VRMS</th>
+<th>Impulsions</th>
+<th>Écart</th>
+<th>État</th>
+<th>Moteur</th>
+<th>Alarme</th>
+<th>Problème</th>
+
+</tr>
+
+</thead>
+
+<tbody id="historiqueBody"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<!-- GRAPHIQUE RPM -->
+
+<div class="card">
+
+<h2>
+📈 COURBE RPM
+</h2>
+
+<canvas id="rpmChart"></canvas>
+
+</div>
+
+<!-- GRAPHIQUE VRMS -->
+
+<div class="card">
+
+<h2>
+📈 COURBE VIBRATION RMS
+</h2>
+
+<canvas id="vrmsChart"></canvas>
+
+</div>
+
+<div class="footer">
+
+Système IoT de surveillance moteur
+
+</div>
+
+</div>
+
+<script>
+
+let historique = [];
+
+let rpmChart = null;
+let vrmsChart = null;
+
+let dernierTimestamp = 0;
+
+// ======================================================
+// UTILITAIRE
+// ======================================================
+
+function nombre(valeur) {
+
+    const n = Number(valeur);
+
+    return Number.isFinite(n)
+        ? n
+        : 0;
+}
+
+// ======================================================
+// CHARGER DONNEES
+// ======================================================
+
+async function chargerDonnees() {
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/data",
+                {
+                    cache: "no-store"
+                }
+            );
+
+        if (!response.ok) {
+            throw new Error(
+                "HTTP " + response.status
+            );
+        }
+
+        const data =
+            await response.json();
+
+        document
+            .getElementById("connexion")
+            .textContent =
+                "Connexion : CONNECTÉ";
+
+        document
+            .getElementById("rpm")
+            .textContent =
+                nombre(data.rpm)
+                    .toFixed(2)
+                + " tr/min";
+
+        document
+            .getElementById("ax")
+            .textContent =
+                nombre(data.ax)
+                    .toFixed(2)
+                + " m/s²";
+
+        document
+            .getElementById("ay")
+            .textContent =
+                nombre(data.ay)
+                    .toFixed(2)
+                + " m/s²";
+
+        document
+            .getElementById("az")
+            .textContent =
+                nombre(data.az)
+                    .toFixed(2)
+                + " m/s²";
+
+        document
+            .getElementById("arms")
+            .textContent =
+                nombre(data.arms)
+                    .toFixed(2)
+                + " m/s²";
+
+        document
+            .getElementById("vrms")
+            .textContent =
+                nombre(data.vrms)
+                    .toFixed(2)
+                + " mm/s";
+
+        document
+            .getElementById("impulsions")
+            .textContent =
+                nombre(data.impulsions);
+
+        document
+            .getElementById("ecart")
+            .textContent =
+                nombre(data.ecart)
+                    .toFixed(2)
+                + " %";
+
+        document
+            .getElementById("heure")
+            .textContent =
+                data.heure ||
+                "00:00:00";
+
+        document
+            .getElementById("etat")
+            .textContent =
+                data.etat ||
+                "ARRET";
+
+        document
+            .getElementById("moteur")
+            .textContent =
+                data.moteur ||
+                "OFF";
+
+        document
+            .getElementById("alarme")
+            .textContent =
+                data.alarme ||
+                "OFF";
+
+        document
+            .getElementById("probleme")
+            .textContent =
+                data.probleme ||
+                "AUCUN";
+
+        // ==============================================
+        // ALARME
+        // ==============================================
+
+        const blocAlarme =
+            document.querySelector(
+                ".alarm"
+            );
+
+        if (
+            String(data.alarme)
+                .toUpperCase()
+            === "ON"
+        ) {
+
+            blocAlarme.style.borderColor =
+                "#dc2626";
+
+        } else {
+
+            blocAlarme.style.borderColor =
+                "transparent";
+        }
+
+        // ==============================================
+        // HISTORIQUE LIVE
+        // ==============================================
+
+        const maintenant =
+            Date.now();
+
+        // Evite d'ajouter plusieurs fois
+        // exactement la même mesure
+
+        if (
+            maintenant - dernierTimestamp
+            >= 2500
+        ) {
+
+            historique.push({
+
+                heure:
+                    data.heure ||
+                    new Date()
+                        .toLocaleTimeString(
+                            "fr-FR"
+                        ),
+
+                rpm:
+                    nombre(data.rpm),
+
+                ax:
+                    nombre(data.ax),
+
+                ay:
+                    nombre(data.ay),
+
+                az:
+                    nombre(data.az),
+
+                arms:
+                    nombre(data.arms),
+
+                vrms:
+                    nombre(data.vrms),
+
+                impulsions:
+                    nombre(data.impulsions),
+
+                ecart:
+                    nombre(data.ecart),
+
+                etat:
+                    data.etat ||
+                    "ARRET",
+
+                moteur:
+                    data.moteur ||
+                    "OFF",
+
+                alarme:
+                    data.alarme ||
+                    "OFF",
+
+                probleme:
+                    data.probleme ||
+                    "AUCUN"
+
+            });
+
+            if (
+                historique.length > 100
+            ) {
+
+                historique.shift();
+
+            }
+
+            dernierTimestamp =
+                maintenant;
+
+            mettreAJourGraphiques();
+        }
+
+    } catch (error) {
+
+        document
+            .getElementById("connexion")
+            .textContent =
+                "Connexion : HORS LIGNE";
+
+        console.error(error);
+    }
+}
+
+// ======================================================
+// CHARGER HISTORIQUE POSTGRESQL
+// ======================================================
+
+async function chargerHistorique() {
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/history?limit=100",
+                {
+                    cache: "no-store"
+                }
+            );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const resultat =
+            await response.json();
+
+        if (
+            resultat.success &&
+            Array.isArray(resultat.data)
+        ) {
+
+            historique =
+                resultat.data
+                    .slice()
+                    .reverse()
+                    .map(function(d) {
+
+                        return {
+
+                            heure:
+                                d.heure ||
+                                "00:00:00",
+
+                            rpm:
+                                nombre(d.rpm),
+
+                            ax:
+                                nombre(d.ax),
+
+                            ay:
+                                nombre(d.ay),
+
+                            az:
+                                nombre(d.az),
+
+                            arms:
+                                nombre(d.arms),
+
+                            vrms:
+                                nombre(d.vrms),
+
+                            impulsions:
+                                nombre(
+                                    d.impulsions
+                                ),
+
+                            ecart:
+                                nombre(d.ecart),
+
+                            etat:
+                                d.etat ||
+                                "ARRET",
+
+                            moteur:
+                                d.moteur ||
+                                "OFF",
+
+                            alarme:
+                                d.alarme ||
+                                "OFF",
+
+                            probleme:
+                                d.probleme ||
+                                "AUCUN"
+                        };
+                    });
+
+            afficherTableauHistorique();
+
+            mettreAJourGraphiques();
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Historique :",
+            error
+        );
+    }
+}
+
+// ======================================================
+// TABLEAU
+// ======================================================
+
+function afficherTableauHistorique() {
+
+    const tbody =
+        document.getElementById(
+            "historiqueBody"
+        );
+
+    tbody.innerHTML = "";
+
+    historique
+        .slice()
+        .reverse()
+        .forEach(function(data) {
+
+            const ligne =
+                document.createElement(
+                    "tr"
+                );
+
+            ligne.innerHTML = `
+
+                <td>${data.heure}</td>
+
+                <td>${data.rpm.toFixed(2)}</td>
+
+                <td>${data.ax.toFixed(2)}</td>
+
+                <td>${data.ay.toFixed(2)}</td>
+
+                <td>${data.az.toFixed(2)}</td>
+
+                <td>${data.arms.toFixed(2)}</td>
+
+                <td>${data.vrms.toFixed(2)}</td>
+
+                <td>${data.impulsions}</td>
+
+                <td>${data.ecart.toFixed(2)} %</td>
+
+                <td>${data.etat}</td>
+
+                <td>${data.moteur}</td>
+
+                <td>${data.alarme}</td>
+
+                <td>${data.probleme}</td>
+
+            `;
+
+            tbody.appendChild(ligne);
+
+        });
+}
+
+// ======================================================
+// AFFICHER HISTORIQUE
+// ======================================================
+
+function afficherHistorique() {
+
+    const section =
+        document.getElementById(
+            "historiqueSection"
+        );
+
+    section.classList.toggle(
+        "active"
+    );
+
+    if (
+        section.classList.contains(
+            "active"
+        )
+    ) {
+
+        chargerHistorique();
+
+    }
+}
+
+// ======================================================
+// GRAPHIQUES
+// ======================================================
+
+function initialiserGraphiques() {
+
+    const rpmContext =
+        document
+            .getElementById(
+                "rpmChart"
+            )
+            .getContext("2d");
+
+    const vrmsContext =
+        document
+            .getElementById(
+                "vrmsChart"
+            )
+            .getContext("2d");
+
+    rpmChart =
+        new Chart(
+            rpmContext,
+            {
+
+                type: "line",
+
+                data: {
+
+                    labels: [],
+
+                    datasets: [
+
+                        {
+
+                            label:
+                                "RPM",
+
+                            data: [],
+
+                            tension: 0.3
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    animation: false,
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero: true
+
+                        }
+
+                    }
+
+                }
+
+            }
+        );
+
+    vrmsChart =
+        new Chart(
+            vrmsContext,
+            {
+
+                type: "line",
+
+                data: {
+
+                    labels: [],
+
+                    datasets: [
+
+                        {
+
+                            label:
+                                "VRMS (mm/s)",
+
+                            data: [],
+
+                            tension: 0.3
+
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    animation: false,
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero: true
+
+                        }
+
+                    }
+
+                }
+
+            }
+        );
+}
+
+// ======================================================
+// ACTUALISER GRAPHIQUES
+// ======================================================
+
+function mettreAJourGraphiques() {
+
+    if (
+        !rpmChart ||
+        !vrmsChart
+    ) {
+        return;
+    }
+
+    const donnees =
+        historique.slice(-30);
+
+    const labels =
+        donnees.map(
+            d => d.heure
+        );
+
+    const rpm =
+        donnees.map(
+            d => d.rpm
+        );
+
+    const vrms =
+        donnees.map(
+            d => d.vrms
+        );
+
+    rpmChart.data.labels =
+        labels;
+
+    rpmChart.data.datasets[0].data =
+        rpm;
+
+    rpmChart.update();
+
+    vrmsChart.data.labels =
+        labels;
+
+    vrmsChart.data.datasets[0].data =
+        vrms;
+
+    vrmsChart.update();
+
+    const section =
+        document.getElementById(
+            "historiqueSection"
+        );
+
+    if (
+        section.classList.contains(
+            "active"
+        )
+    ) {
+
+        afficherTableauHistorique();
+
+    }
+}
+
+// ======================================================
+// START / STOP
+// ======================================================
+
+async function envoyerCommande(
+    commande
+) {
+
+    const message =
+        document.getElementById(
+            "message"
+        );
+
+    message.textContent =
+        "Envoi de la commande "
+        + commande
+        + "...";
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/command",
+                {
+
+                    method: "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json"
+
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            command:
+                                commande
+
+                        })
+
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (
+            data.success
+        ) {
+
+            message.textContent =
+                "Commande "
+                + commande
+                + " envoyée avec succès.";
+
+        } else {
+
+            message.textContent =
+                "Erreur : "
+                + (
+                    data.error ||
+                    "Commande refusée"
+                );
+        }
+
+    } catch (error) {
+
+        message.textContent =
+            "Erreur de connexion au serveur.";
+
+        console.error(error);
+    }
+}
+
+// ======================================================
+// INITIALISATION
+// ======================================================
+
+initialiserGraphiques();
+
+chargerHistorique();
+
+chargerDonnees();
+
+// ======================================================
+// ACTUALISATION
+// ======================================================
+
+setInterval(
+    chargerDonnees,
+    3000
+);
+
+</script>
+
+</body>
+
+</html>
